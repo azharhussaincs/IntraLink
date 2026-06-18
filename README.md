@@ -23,6 +23,13 @@ The system is deployed on an organization's internal server, and users connect v
 - **Real-Time**: Socket.io
 - **Security**: JWT, Argon2 (Hashing), AES-256-GCM (Encryption)
 
+## 🎨 UI/UX Design
+CipherLink features a professional, high-fidelity user interface inspired by Slack and Microsoft Teams.
+- **Enterprise Dashboard**: Real-time analytics, quick actions, and organizational hierarchy visualization.
+- **Dark/Light Mode**: Full system-wide theme support.
+- **Responsive Design**: Optimized for Desktop, Tablet, and Mobile devices.
+- **Clean Navigation**: Collapsible sidebar, global header, and breadcrumb-based workflows.
+
 ---
 
 ## Architecture Diagrams
