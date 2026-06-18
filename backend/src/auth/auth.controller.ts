@@ -18,10 +18,4 @@ export class AuthController {
     }
     return this.authService.login(user);
   }
-
-  @Post('register')
-  async register(@Body() body: any) {
-    // In a real app, you'd have validation DTOs
-    return this.usersService.create(body.username, body.email, body.password, body.role);
-  }
 }

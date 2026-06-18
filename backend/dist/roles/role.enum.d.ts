@@ -1,0 +1,8 @@
+export declare enum UserRole {
+    ADMIN = "ADMIN",
+    SUPER_USER = "SUPER_USER",
+    TEAM_LEAD = "TEAM_LEAD",
+    TEAM_MANAGER = "TEAM_MANAGER",
+    PROJECT_MANAGER = "PROJECT_MANAGER",
+    TEAM_MEMBER = "TEAM_MEMBER"
+}

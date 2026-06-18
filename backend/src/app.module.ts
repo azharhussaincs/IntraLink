@@ -1,4 +1,15 @@
 import { Module } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+// Polyfill for Node.js < 19.0.0
+if (typeof globalThis.crypto === 'undefined') {
+  // @ts-ignore
+  globalThis.crypto = crypto.webcrypto || crypto;
+}
+if (typeof globalThis.crypto.randomUUID === 'undefined') {
+  // @ts-ignore
+  globalThis.crypto.randomUUID = () => crypto.randomUUID();
+}
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';

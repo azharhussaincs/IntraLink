@@ -1,81 +1,74 @@
-# USER MANUAL
+# CipherLink: User Manual
 
-Welcome to the Enterprise LAN Messenger! This guide will help you get started with the system's core features.
+Welcome to CipherLink, your organization's secure communication and file-sharing platform. This manual covers everything you need to know to get started.
+
+## 1. Getting Started
+
+### Accessing the App
+Open your web browser and enter the address provided by your administrator (e.g., `http://192.168.1.100:3000`).
+
+### Logging In
+1. Enter your **Username**.
+2. Enter your **Password**.
+3. Click **Sign In**.
+
+*Note: If you do not have an account, please contact your administrator or team lead.*
 
 ---
 
-## Getting Started
-
-### Login
-1. Open your web browser and enter the organization's messenger URL (e.g., `http://192.168.1.100`).
-2. Enter your **Username** and **Password** provided by your administrator.
-3. Click **Login**.
-
-> [Screenshot Placeholder: Login Screen]
-
----
-
-## Real-Time Chat
+## 2. Chatting
 
 ### Sending Messages
-- Select a contact or a group from the sidebar on the left.
-- Type your message in the chat input at the bottom.
-- Press **Enter** or click the **Send** icon.
+1. Select a contact or a group from the sidebar.
+2. Type your message in the chat box at the bottom.
+3. Press **Enter** or click the **Send** icon.
 
-### Messaging Features
-- **Replies**: Hover over a message and click the **Reply** icon to start a thread.
-- **Editing**: You can edit your sent messages by clicking the **pencil** icon.
-- **Deleting**: Remove a message for everyone by clicking the **trash** icon.
-- **Search**: Use the search bar at the top of the chat panel to find specific messages in the current conversation.
+### Managing Messages
+- **Edit**: Click the "..." menu next to your message and select **Edit**.
+- **Delete**: Click the "..." menu and select **Delete**.
+- **React**: Click the emoji icon to add a reaction to a message.
 
-> [Screenshot Placeholder: Chat Interface]
+### Searching
+Use the search bar at the top of the chat panel to find past messages or specific files shared in the conversation.
 
 ---
 
-## File Sharing
+## 3. File Sharing
 
 ### Uploading Files
-- In any chat, click the **plus (+)** icon or the **paperclip** icon.
-- Select the file(s) you wish to upload.
-- The system supports large files; you will see a progress bar for each upload.
-- Once finished, the file will be visible in the chat.
+1. In a chat or group, click the **Plus (+)** icon.
+2. Select the file(s) you wish to upload.
+3. Wait for the upload to complete. Large files will show a progress bar.
 
 ### Downloading Files
-- Click the **Download** icon on any shared file in the chat history.
-- The file will be saved to your default downloads folder.
+Click on any shared file in the chat to download it to your computer.
 
-### File Manager
-- Navigate to the **Files** tab in the sidebar to view all files shared with you or by you in one place.
-
----
-
-## Groups
-
-### Creating a Group
-- Click the **(+)** icon next to the "Groups" section in the sidebar.
-- Enter a group name and description.
-- Add members from the user list.
-- Click **Create**.
-
-### Managing Groups
-- If you are a Group Admin, you can add or remove members by clicking the **Group Info** (i) icon in the top right of the group chat.
+### Resume Support
+If your connection is interrupted during a large file upload, the system will automatically attempt to resume from where it left off once the connection is restored.
 
 ---
 
-## Notifications
-- **Desktop Notifications**: Enable these in your browser to receive alerts when the tab is not focused.
-- **Unread Badges**: Red circles on the sidebar indicate the number of unread messages in a conversation.
-- **In-App Alerts**: Pop-ups will appear for system announcements or mention notifications.
+## 4. Groups
+
+### Creating Groups
+1. Click the **(+)** icon next to "Groups" in the sidebar.
+2. Enter a **Group Name**.
+3. Select members to add.
+4. Click **Create**.
+
+### Managing Members
+If you are the group creator or an admin, you can add or remove members by clicking on the group header and selecting **Manage Members**.
 
 ---
 
-## Profile Management
-- Click on your avatar/name in the bottom-left corner.
-- Select **Profile Settings**.
-- Here you can:
-    - Change your display name.
-    - Update your profile picture.
-    - Change your password.
-    - Toggle between **Dark Mode** and **Light Mode**.
+## 5. Notifications
+- **Message Notifications**: You will receive a notification badge on the sidebar when you have unread messages.
+- **System Announcements**: Critical updates from the Admin or Super User will appear at the top of your dashboard.
 
-> [Screenshot Placeholder: Profile Settings]
+---
+
+## 6. Profile Management
+To update your profile:
+1. Click on your avatar/name in the bottom-left corner.
+2. Select **Settings**.
+3. Here you can change your display name, update your email, or toggle **Dark Mode**.

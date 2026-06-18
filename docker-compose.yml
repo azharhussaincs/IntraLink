@@ -41,8 +41,21 @@ services:
       - postgres
       - redis
       - minio
-    env_file:
-      - ./backend/.env
+    environment:
+      - PORT=3001
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=messenger_user
+      - DATABASE_PASSWORD=messenger_password
+      - DATABASE_NAME=messenger_db
+      - DATABASE_URL=postgres://messenger_user:messenger_password@postgres:5432/messenger_db
+      - JWT_SECRET=production_secret_key_change_me
+      - ENCRYPTION_KEY=12345678901234567890123456789012
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minio_admin
+      - MINIO_SECRET_KEY=minio_password
+      - REDIS_URL=redis://redis:6379
     ports:
       - "3001:3001"
 
@@ -52,6 +65,9 @@ services:
     restart: always
     depends_on:
       - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
     ports:
       - "3000:3000"
 

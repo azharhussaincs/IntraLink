@@ -1,18 +1,16 @@
-# SYSTEM ADMINISTRATOR GUIDE
+# CipherLink: System Administrator Guide
 
-## Introduction
-This guide is intended for system administrators responsible for deploying, maintaining, and monitoring the Enterprise LAN Messenger & File Sharing System.
+This guide is intended for system administrators responsible for the deployment, configuration, and maintenance of the CipherLink enterprise messenger.
 
----
+## 1. Initial Server Setup
 
-## Initial Server Setup
+### OS Requirements
+- **Recommended**: Ubuntu 22.04 LTS or Debian 11.
+- **Resources**: Minimum 4GB RAM, 2 CPU Cores, 50GB+ Disk Space (Scalable based on file sharing needs).
 
-### 1. Operating System
-Recommended: Ubuntu 22.04 LTS or any modern Linux distribution with Docker support.
-
-### 2. Install Docker & Docker Compose
+### Dependencies Installation
 ```bash
-# Update packages
+# Update system
 sudo apt update && sudo apt upgrade -y
 
 # Install Docker
@@ -20,123 +18,119 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
 # Install Docker Compose
-sudo apt install docker-compose-plugin -y
+sudo apt install docker-compose -y
 ```
 
-### 3. Configure Firewall (UFW)
-Open necessary ports for LAN access:
+### Firewall Configuration (UFW)
+Ensure only the necessary ports are open to the LAN:
+- **3000**: Frontend Access
+- **3001**: Backend API & WebSockets
+- **9000/9001**: MinIO (Storage) Console
+
 ```bash
-sudo ufw allow 80/tcp     # Frontend HTTP
-sudo ufw allow 443/tcp    # Frontend HTTPS (if configured)
-sudo ufw allow 3001/tcp   # Backend API
-sudo ufw allow 9000/tcp   # MinIO API
-sudo ufw allow 9001/tcp   # MinIO Console
+sudo ufw allow 3000/tcp
+sudo ufw allow 3001/tcp
+sudo ufw allow 9000/tcp
+sudo ufw allow 9001/tcp
 sudo ufw enable
 ```
 
-### 4. Configure Storage
-Ensure the `/var/lib/docker/volumes` directory has sufficient space, or mount a dedicated data drive to the project's data directory.
-
 ---
 
-## First Deployment
+## 2. First Deployment
 
-1. **Clone project & Navigate**:
-   ```bash
-   cd /opt/enterprise-messenger
-   ```
-
-2. **Configure Environment**:
-   Create a production `.env` file based on the provided template. **CRITICAL**: Change all default passwords and secrets.
-
-3. **Launch Stack**:
-   ```bash
-   docker compose -f docker-compose.yml up -d
-   ```
-
-4. **Verify Deployment**:
-   ```bash
-   docker compose ps
-   # Check logs if any container fails to start
-   docker compose logs -f backend
-   ```
-
----
-
-## Updating System
-
-To update the system with minimal downtime:
+### Step 1: Clone and Configure
 ```bash
-# Pull latest changes
-git pull origin main
+git clone <repository-url>
+cd cipherlink
+```
 
-# Rebuild and restart containers
-docker compose up -d --build
+### Step 2: Environment Setup
+Copy the example environment files and update them with production-grade secrets.
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.local.example frontend/.env.local
+```
+**Important**: Change `JWT_SECRET` and `ENCRYPTION_KEY` immediately.
+
+### Step 3: Start Services
+```bash
+docker-compose up -d --build
+```
+
+### Step 4: Create Initial Admin
+Run this command to gain access to the system:
+```bash
+docker exec -it messenger_db psql -U cipherlink_user -d cipherlink -c "INSERT INTO users (username, \"passwordHash\", role, \"fullName\", \"isActive\") VALUES ('admin', '\$argon2id\$v=19\$m=65536,t=3,p=4\$OMPuX/z1urYuOEQ97b375Q\$ie8heCrm2QV7ndfynX3II9VxP6ZLcgpWgox0JhT92to', 'ADMIN', 'System Administrator', true);"
+```
+*Login: admin / admin*
+
+---
+
+## 3. Updating the System
+To apply updates without data loss:
+```bash
+git pull origin main
+docker-compose down
+docker-compose up -d --build
 ```
 
 ---
 
-## Monitoring
+## 4. Monitoring
 
 ### Container Health
 ```bash
+docker ps
 docker stats
 ```
-Monitor CPU, Memory, and Network usage of each container.
 
-### Logs
-Logs are captured by Docker. Use `docker compose logs -f [service_name]` to view real-time logs.
-Recommended: Integrate with a log aggregator if the organization scales.
-
-### Disk Space
-MinIO storage will grow over time. Monitor `/data/minio` (or the mapped volume).
+### Log Inspection
+```bash
+docker logs -f messenger_backend
+docker logs -f messenger_frontend
+```
 
 ---
 
-## User Management
+## 5. User Management
 
-The **Admin** role has exclusive access to the Administration Dashboard.
+Administrators manage users through the **User Management** dashboard (`/dashboard/users`).
 
 ### Creating Users
-1. Log in as an Admin.
-2. Navigate to **Admin Panel > User Management**.
-3. Create users manually or import via CSV (if supported).
-
-### Promoting Roles
-Admin can promote users to:
-- **Super User**: For company owners/executives.
-- **Team Lead**: For department heads.
+1. Log in as **Admin**.
+2. Navigate to **Manage Users**.
+3. Enter **Username** and **Password**.
+4. (Optional) Set **Role**. Default is `TEAM_MEMBER`.
 
 ### Password Resets
-If a user forgets their password, the Admin can trigger a manual reset from the User Management panel.
+If a user forgets their password, the Admin can use the database to update the hash:
+```bash
+# Example reset to Admin@123
+docker exec -it messenger_db psql -U cipherlink_user -d cipherlink -c "UPDATE users SET \"passwordHash\" = '\$argon2id\$v=19\$m=65536,t=3,p=4\$v8F/Xn0T2R8\$X+o5N0b0N0N0N0N0N0N0N0' WHERE username = 'target_user';"
+```
 
 ---
 
-## Backup Procedures
+## 6. Backup Procedures
 
-### 1. Database Backup (PostgreSQL)
-Run daily:
+### Daily Database Backup
+Set up a cron job for daily dumps:
 ```bash
-docker exec messenger-db pg_dump -U messenger_user messenger_db > backup_$(date +%F).sql
+docker exec messenger_db pg_dump -U cipherlink_user cipherlink > /backups/db_$(date +%F).sql
 ```
 
-### 2. File Storage Backup (MinIO)
-Backup the entire MinIO data volume:
-```bash
-rsync -av /opt/enterprise-messenger/data/minio /mnt/backup/minio/
-```
-
-### 3. Backup Schedule
-- **Daily**: Database SQL dump.
-- **Weekly**: Incremental file storage backup.
-- **Monthly**: Full system snapshot.
+### File Storage Backup
+MinIO files are stored in the volume mapped to `./docker/minio_data`. Back up this entire directory using `rsync` or your preferred tool.
 
 ---
 
-## Disaster Recovery
-
-1. **Server Failure**: Provision a new server, install Docker.
-2. **Data Restore**:
-   - Copy MinIO data back to `/opt/enterprise-messenger/data/minio`.
-   - Restore DB: `cat backup.sql | docker exec -i messenger-db psql -U messenger_user -d messenger_db`.
-3. **Restart**: `docker compose up -d`.
+## 7. Disaster Recovery
+1. Reinstall Docker/Compose on the new server.
+2. Restore the `./docker/minio_data` folder.
+3. Start the database container: `docker-compose up -d db`.
+4. Restore the SQL dump:
+   ```bash
+   cat backup.sql | docker exec -i messenger_db psql -U cipherlink_user -d cipherlink
+   ```
+5. Start the remaining services: `docker-compose up -d`.

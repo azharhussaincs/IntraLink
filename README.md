@@ -1,25 +1,27 @@
-# Enterprise LAN Messenger & File Sharing System
+# Enterprise LAN Messenger & File Sharing System (CipherLink)
 
 ## Project Overview
-An enterprise-grade, offline-first communication and file-sharing platform designed for secure organizational use within a Local Area Network (LAN). This system provides a self-hosted alternative to Slack or Microsoft Teams, ensuring that all data remains strictly within the organization's infrastructure.
+CipherLink is a complete enterprise-grade, offline-first communication and file-sharing platform designed for organizations. The application operates entirely within a Local Area Network (LAN), ensuring that chat, file transfers, and collaboration remain strictly private and secure, even if the building has internet access.
+
+The system is deployed on an organization's internal server, and users connect via the server's IP address. It combines the ease of use of Slack and Microsoft Teams with a Zero Trust security architecture and end-to-end encryption.
 
 ### Key Features
-- **Offline-First Architecture**: Works entirely without internet dependency.
-- **Zero Trust Security**: Mandatory authentication and authorization for every request.
-- **End-to-End Encryption**: AES-256-GCM encryption for messages and file metadata.
-- **Real-Time Messaging**: Instant communication via WebSockets.
-- **Large File Sharing**: Support for multi-gigabyte files with chunked uploads/downloads.
-- **Role-Based Access Control (RBAC)**: 6 distinct organizational roles.
-- **Audit Logging**: Comprehensive tracking of system activities.
+- **Offline-First Architecture**: Zero dependency on external APIs or cloud services.
+- **Zero Trust Security**: Every request is authenticated and authorized; includes Device Validation.
+- **End-to-End Encryption**: Messages and file metadata are encrypted using AES-256-GCM.
+- **Real-Time Communication**: Instant messaging, typing indicators, and presence management via WebSockets.
+- **Large File Support**: Optimized for files from 10MB to 50GB+ with chunked uploading and streaming.
+- **Role-Based Access Control (RBAC)**: 6 distinct roles (Admin, Super User, Team Lead, etc.).
+- **Daily Reporting System**: Built-in workflow for Team Leads to submit daily/weekly status updates.
 
 ### Technology Stack
-- **Frontend**: Next.js, TypeScript, TailwindCSS, ShadCN UI
-- **Backend**: NestJS, TypeScript, TypeORM
-- **Database**: PostgreSQL
-- **Cache**: Redis
-- **Storage**: MinIO (S3-Compatible)
+- **Frontend**: Next.js 14, TypeScript, TailwindCSS, ShadCN UI
+- **Backend**: Node.js, NestJS 11, TypeScript
+- **Database**: PostgreSQL (Primary Data)
+- **Cache**: Redis (Real-time Pub/Sub & Caching)
+- **Storage**: MinIO (Self-hosted S3-compatible storage)
 - **Real-Time**: Socket.io
-- **Security**: JWT, Argon2, AES-256-GCM
+- **Security**: JWT, Argon2 (Hashing), AES-256-GCM (Encryption)
 
 ---
 
@@ -29,12 +31,12 @@ An enterprise-grade, offline-first communication and file-sharing platform desig
 ```mermaid
 graph TD
     User((User)) -->|HTTPS/WSS| Frontend[Next.js Frontend]
-    Frontend -->|API Requests| Backend[NestJS Backend]
+    Frontend -->|REST API| Backend[NestJS Backend]
     Backend -->|Queries| DB[(PostgreSQL)]
-    Backend -->|Pub/Sub & Cache| Redis[(Redis)]
+    Backend -->|Cache/Events| Redis[(Redis)]
     Backend -->|Object Storage| MinIO[(MinIO)]
-    Backend -->|Events| Socket[Socket.io]
-    Socket -->|Real-time| User
+    Backend -->|Real-time| Socket[Socket.io]
+    Socket <-->|WSS| User
 ```
 
 ### Authentication Flow
@@ -44,126 +46,123 @@ sequenceDiagram
     participant Frontend
     participant Backend
     participant DB
-    User->>Frontend: Enter Credentials
+    User->>Frontend: Enter Username/Password
     Frontend->>Backend: POST /auth/login
-    Backend->>DB: Validate User
+    Backend->>DB: Verify User & Hash
     DB-->>Backend: User Data
     Backend-->>Frontend: JWT Access & Refresh Tokens
-    Frontend->>User: Login Success
+    Frontend->>User: Redirect to Dashboard
 ```
 
-### File Upload Flow
+### File Upload Flow (Large Files)
 ```mermaid
-sequenceDiagram
-    participant User
-    participant Backend
-    participant MinIO
-    User->>Backend: Initialize Upload (Metadata)
-    Backend-->>User: Upload ID / Presigned URL
-    User->>MinIO: Upload Chunks (Direct or Proxy)
-    MinIO-->>User: Success
-    User->>Backend: Finalize Upload
-    Backend->>Backend: Verify Integrity (SHA-256)
+graph LR
+    User -->|File Chunks| Frontend
+    Frontend -->|POST /files/upload/chunk| Backend
+    Backend -->|Stream| MinIO
+    Backend -->|Verify Hash| DB
+    MinIO -->|Acknowledge| Backend
+    Backend -->|Progress| User
 ```
 
 ---
 
 ## Prerequisites
-- Docker & Docker Compose
-- Node.js (v18+ recommended)
-- PostgreSQL (v14+)
-- Redis (v6+)
-- MinIO
+Before installation, ensure your server has:
+- **Docker** & **Docker Compose**
+- **Node.js 20+** (for local development)
+- **PostgreSQL 15+**
+- **Redis 7+**
 
 ---
 
 ## Installation & Setup
 
-### Local Development Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/azharhussaincs/IntraLink.git
-   cd IntraLink
-   ```
-
-2. **Backend Setup**:
-   ```bash
-   cd backend
-   npm install
-   cp .env.example .env
-   # Edit .env with your local credentials
-   npm run start:dev
-   ```
-
-3. **Frontend Setup**:
-   ```bash
-   cd ../frontend
-   npm install
-   cp .env.local.example .env.local
-   # Edit .env.local with Backend API URL
-   npm run dev
-   ```
-
-### Docker Deployment
-The easiest way to deploy the entire stack is using Docker Compose.
+### 1. Docker Deployment (Recommended)
+The fastest way to deploy CipherLink is using Docker Compose.
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd cipherlink
+
+# Start all services
 docker-compose up -d
 ```
-This will start:
-- `db`: PostgreSQL Database
-- `redis`: Redis Cache
-- `minio`: MinIO Object Storage
-- `backend`: NestJS API
-- `frontend`: Next.js Web App
+All services (Database, Redis, MinIO, Backend, Frontend) will start automatically.
+
+### 2. Local Development Setup
+If you want to run the project for development:
+
+#### Backend Setup
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your credentials
+npm run build
+npm run start:dev
+```
+
+#### Frontend Setup
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local
+# Edit .env.local with NEXT_PUBLIC_API_URL
+npm run dev
+```
 
 ---
 
 ## Environment Variables
 
 ### Backend (`.env`)
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@db:5432/db` |
-| `JWT_SECRET` | Secret key for signing JWTs | `a-very-secure-random-string` |
-| `ENCRYPTION_KEY` | 32-char key for AES-256 | `12345678901234567890123456789012` |
-| `MINIO_ENDPOINT`| MinIO server address | `minio` |
-| `REDIS_URL` | Redis connection string | `redis://redis:6379` |
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `PORT` | Backend API port | `3001` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@localhost:5432/db` |
+| `JWT_SECRET` | Secret key for signing tokens | `random_long_string` |
+| `ENCRYPTION_KEY` | 32-character key for AES-256 | `your-32-char-key-here` |
+| `MINIO_ENDPOINT` | MinIO server address | `localhost` |
+| `REDIS_URL` | Redis connection URL | `redis://localhost:6379` |
+
+---
+
+## Initial Admin Creation
+Because public registration is disabled for security, the first Admin must be created via SQL:
+
+1. **Access DB**: `sudo -u postgres psql -d cipherlink`
+2. **Execute**:
+```sql
+INSERT INTO users (username, "passwordHash", role, "fullName", "isActive") 
+VALUES ('admin', '$argon2id$v=19$m=65536,t=3,p=4$OMPuX/z1urYuOEQ97b375Q$ie8heCrm2QV7ndfynX3II9VxP6ZLcgpWgox0JhT92to', 'ADMIN', 'System Administrator', true);
+```
+*Default Credentials: Username: `admin` | Password: `admin`*
 
 ---
 
 ## Running Tests
 ```bash
-# Backend tests
+# Backend Tests
 cd backend
 npm run test        # Unit tests
 npm run test:e2e    # E2E tests
 
-# Frontend tests
+# Frontend Tests
 cd frontend
 npm run test
 ```
 
 ---
 
-## Production Deployment
-For production on a Linux/Ubuntu server:
-1. **Configure Static IP**: Ensure the server has a static LAN IP (e.g., `192.168.1.100`).
-2. **Setup Reverse Proxy**: Use Nginx to handle SSL (optional for LAN) and port 80/443 mapping.
-3. **Firewall**: Allow ports `80`, `443`, and `9000` (MinIO API).
-4. **Hardening**: Change all default passwords and secrets in `.env`.
-
----
-
 ## Backup & Recovery
-- **Database**: Use `pg_dump` for daily PostgreSQL backups.
-- **Files**: Sync the MinIO data directory to an external drive or backup server.
-- **Restore**: Use `psql` to restore database dumps and copy files back to the MinIO volume.
+- **Database**: Use `pg_dump` daily to back up the PostgreSQL database.
+- **Files**: Back up the MinIO data directory located at `./docker/minio_data`.
 
 ---
 
 ## Troubleshooting
-- **Connection Refused**: Check if containers are running (`docker ps`) and firewall rules.
-- **WebSocket Disconnects**: Ensure the reverse proxy (Nginx) is configured for WebSockets.
-- **Upload Fails**: Check MinIO bucket permissions and available disk space.
+- **Port 3001 in use**: Run `sudo fuser -k 3001/tcp` to clear the port.
+- **MinIO Connection Refused**: Ensure the `MINIO_ENDPOINT` matches your server IP or `localhost` if in Docker.
+- **Login Failed**: Ensure you created the initial Admin user as described above.

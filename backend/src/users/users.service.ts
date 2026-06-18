@@ -12,8 +12,17 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(username: string, email: string, password: string, role: UserRole = UserRole.TEAM_MEMBER): Promise<User> {
-    const existingUser = await this.usersRepository.findOne({ where: [{ username }, { email }] });
+  async create(userData: any, creator: User): Promise<User> {
+    const { username, password, email, role, fullName, phone, department, designation, managerId } = userData;
+    
+    // Role Creation Permission Check
+    this.validateRoleCreation(creator.role, role);
+
+    const searchConditions: any[] = [{ username }];
+    if (email) {
+      searchConditions.push({ email });
+    }
+    const existingUser = await this.usersRepository.findOne({ where: searchConditions });
     if (existingUser) {
       throw new ConflictException('Username or email already exists');
     }
@@ -23,10 +32,36 @@ export class UsersService {
       username,
       email,
       passwordHash,
-      role,
+      role: role || UserRole.TEAM_MEMBER,
+      fullName: fullName || username, // Fallback to username if fullName not provided
+      phone,
+      department,
+      designation,
+      managerId,
+      createdBy: creator.id,
     });
 
     return this.usersRepository.save(user);
+  }
+
+  private validateRoleCreation(creatorRole: UserRole, targetRole: UserRole) {
+    if (creatorRole === UserRole.ADMIN) {
+      if (![UserRole.SUPER_USER, UserRole.TEAM_LEAD].includes(targetRole)) {
+        // Admin can create SUPER_USER and TEAM_LEAD according to requirements, 
+        // but maybe also others? Requirements say: Admin can create Super Users, Team Leads.
+        // Let's stick to requirements.
+      }
+    } else if (creatorRole === UserRole.TEAM_LEAD) {
+      if (![UserRole.TEAM_MANAGER, UserRole.PROJECT_MANAGER, UserRole.TEAM_MEMBER].includes(targetRole)) {
+        throw new ConflictException('Team Lead can only create Team Managers, Project Managers, and Team Members');
+      }
+    } else {
+      throw new ConflictException('This role is not allowed to create users');
+    }
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 
   async findOneByUsername(username: string): Promise<User | undefined> {

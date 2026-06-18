@@ -1,76 +1,35 @@
-# TESTING GUIDE
+# CipherLink: Testing Guide
 
-This document outlines the procedures to verify the functionality, security, and performance of the system.
-
----
+This guide explains how to verify that the CipherLink system is functioning correctly after installation or an update.
 
 ## 1. Authentication Testing
 **Goal**: Verify secure access and role enforcement.
+- [ ] **Login**: Attempt to log in with the initial Admin credentials.
+- [ ] **Restricted Access**: Try to access `/dashboard/users` as a `TEAM_MEMBER`. It should deny access.
+- [ ] **Logout**: Log out and verify you can no longer access the Dashboard via direct URL.
+- [ ] **Token Persistence**: Refresh the page; verify you remain logged in (JWT check).
 
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1.1 | Login with correct credentials | Successful login, JWT token stored in browser session. |
-| 1.2 | Login with incorrect password | "Unauthorized" error message. |
-| 1.3 | Access `/admin` route as Team Member | Redirect to unauthorized page or 403 error. |
-| 1.4 | Wait for token expiry | Auto-refresh of token or forced logout. |
-
----
-
-## 2. Chat & Real-Time Testing
-**Goal**: Ensure low-latency messaging and persistence.
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 2.1 | User A sends DM to User B | User B receives message instantly without page refresh. |
-| 2.2 | User B reads message | User A sees "Read" receipt update. |
-| 2.3 | Post message in Group Chat | All members of the group receive the message. |
-| 2.4 | Edit a sent message | Content updates for all participants in real-time. |
-
----
+## 2. Chat Testing
+**Goal**: Verify real-time messaging capabilities.
+- [ ] **Direct Message**: Open the app in two different browsers (User A and User B). Send a message from A to B. Verify B receives it instantly.
+- [ ] **Typing Indicator**: Verify that when A types, B sees "User A is typing...".
+- [ ] **Read Receipts**: Verify that the message status changes to "Read" once B opens the chat.
+- [ ] **Group Chat**: Create a group with A, B, and C. Send a message and verify all three see it.
 
 ## 3. File Sharing Testing
-**Goal**: Verify large file support and integrity.
+**Goal**: Verify robust file handling.
+- [ ] **Small File**: Upload a 1MB PDF. Verify it can be downloaded and opened.
+- [ ] **Medium File**: Upload a 100MB ZIP file. Verify progress bar accuracy.
+- [ ] **Large File (Stress Test)**: Upload a 1GB+ file. Verify that the system remains responsive during the upload.
+- [ ] **Resume Test**: Start a large upload, disconnect your network for 5 seconds, and reconnect. Verify the upload resumes automatically.
 
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 3.1 | Upload 1MB PDF | Successful upload, preview appears in chat. |
-| 3.2 | Upload 100MB Video | Progress bar updates accurately, successful upload. |
-| 3.3 | Upload 1GB+ File | Successful upload using chunked transfer. |
-| 3.4 | Download uploaded file | File opens correctly, checksum matches original. |
-| 3.5 | Pause/Resume Upload | Upload continues from last chunk without failure. |
+## 4. Security Testing
+**Goal**: Verify data protection and isolation.
+- [ ] **Encryption**: Access the MinIO console (Port 9001). Check a stored file. It should be encrypted/unreadable without the application's key.
+- [ ] **SQL Injection**: Attempt basic SQL injection in the username field (e.g., `' OR 1=1 --`). Verify the system denies access.
+- [ ] **RBAC Enforcement**: Verify that a `PROJECT_MANAGER` cannot delete a team they do not own.
 
----
-
-## 4. Security & Encryption Testing
-**Goal**: Validate data protection at rest and in transit.
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 4.1 | Inspect Database `messages` table | `content` column contains encrypted strings (AES). |
-| 4.2 | Intercept API Request (Burp/Fiddler) | Message content is not visible in raw request (if E2EE) or protected by HTTPS. |
-| 4.3 | Attempt to download file via direct link without login | 403 Forbidden or 401 Unauthorized. |
-
----
-
-## 5. Performance & Load Testing
-**Goal**: Identify system limits.
-
-- **Baseline**: 10 Concurrent Users. Measure CPU/RAM usage of `backend` and `db` containers.
-- **Moderate Load**: 100 Concurrent Users sending messages every 5 seconds. Monitor Redis Pub/Sub latency.
-- **Stress Test**: 500+ Concurrent Users. Verify if the system handles queuing or if memory exhaustion occurs.
-- **Large File Stress**: 10 users uploading 1GB files simultaneously. Monitor disk I/O and network bandwidth.
-
----
-
-## 6. Automated Tests
-Run the following commands to verify code integrity:
-```bash
-# Unit Tests
-npm run test
-
-# Integration Tests
-npm run test:integration
-
-# End-to-End (E2E) Tests
-npm run test:e2e
-```
+## 5. Performance Testing
+**Goal**: Verify stability under load.
+- [ ] **Concurrency**: Simulate 10 users sending messages simultaneously. Verify no messages are lost.
+- [ ] **System Resources**: Use `docker stats` during a 10GB file transfer. Verify CPU/Memory usage remains within expected limits.

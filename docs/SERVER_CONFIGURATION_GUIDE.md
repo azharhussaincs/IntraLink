@@ -1,60 +1,55 @@
-# SERVER CONFIGURATION GUIDE
+# Server Configuration & Change Management Guide
 
-This guide details the specific changes required when migrating the system between different deployment stages.
+This document tracks exactly what needs to change when moving the CipherLink application between different environments.
 
----
+## 1. Local Development → LAN Deployment
+**Scenario**: You have finished testing on your laptop and are moving to the organization's server.
 
-## 1. Migration: Local Development → LAN Deployment
-
-### Configuration Changes
-| Parameter | Local Development | LAN Deployment |
-|-----------|-------------------|----------------|
-| `FRONTEND_URL` | `http://localhost:3000` | `http://192.168.1.100` |
-| `BACKEND_URL` | `http://localhost:3001` | `http://192.168.1.100:3001` |
-| `MINIO_ENDPOINT` | `localhost` | `192.168.1.100` |
-| `JWT_SECRET` | `dev-secret` | `new-secure-random-string` |
-| `ENCRYPTION_KEY` | `dev-key-32-chars` | `new-secure-32-char-key` |
-
-### Steps
-1. Change IP addresses in `.env` files for both Backend and Frontend.
-2. Ensure the LAN IP is static on the server.
-3. Update browser CORS settings in `backend/src/main.ts` if needed.
+### Required Changes
+1. **Frontend `.env.local`**:
+   - *Before*: `NEXT_PUBLIC_API_URL=http://localhost:3001`
+   - *After*: `NEXT_PUBLIC_API_URL=http://192.168.1.100:3001` (Replace with Server IP)
+2. **Backend `.env`**:
+   - *Before*: `MINIO_ENDPOINT=localhost`
+   - *After*: `MINIO_ENDPOINT=192.168.1.100`
+3. **Secrets**:
+   - Generate a new `JWT_SECRET` and `ENCRYPTION_KEY`. Do not use development keys on the LAN server.
 
 ---
 
-## 2. Migration: LAN Deployment → Production Deployment
+## 2. LAN Deployment → Production Hardening
+**Scenario**: Moving from a test LAN server to the permanent production infrastructure.
 
-### Configuration Changes
-| Parameter | LAN Deployment | Production (Enterprise) |
-|-----------|----------------|-------------------------|
-| `DOMAIN` | N/A (IP Only) | `messenger.company.local` |
-| `SSL_ENABLED` | `false` | `true` |
-| `LOG_LEVEL` | `debug` | `info` |
-| `DB_BACKUP_PATH`| `/tmp` | `/mnt/secure-backups` |
-| `PORT` | `3000` | `443` (via Nginx) |
-
-### Infrastructure Changes
-- **Nginx Setup**: Configure as a reverse proxy to handle SSL and Domain routing.
-- **Persistent Storage**: Move Docker volumes from local disk to an enterprise SAN or NAS.
-- **Monitoring**: Connect logs to an ELK stack or similar centralized logging system.
+### Required Changes
+1. **Database**:
+   - Switch from the default `admin` password to a strong, randomly generated string.
+   - Update `DATABASE_URL` in the backend `.env`.
+2. **Persistence**:
+   - Ensure Docker volumes are mapped to a high-availability storage array (SAN/NAS) rather than local disk.
+3. **SSL/TLS**:
+   - If using a reverse proxy (Nginx), update the Frontend and Backend URLs to use `https://`.
+   - Update `MINIO_USE_SSL=true`.
 
 ---
 
-## 3. Migration: Production → New Server Migration
+## 3. Migration to a New Server
+**Scenario**: You are upgrading hardware or moving to a different data center.
 
-### Pre-Migration Checklist
-- [ ] Export current database: `pg_dump`.
-- [ ] Sync MinIO data: `rsync`.
-- [ ] Record all current `.env` variables.
-
-### Recovery on New Server
-1. Setup Docker environment on the new server.
-2. Copy `data` directory and `.env` file.
-3. Run `docker-compose up -d`.
-4. Restore Database dump.
-5. Update DNS records to point to the new Server IP.
+### Checklist
+- [ ] **Stop Services**: `docker-compose down` on the old server.
+- [ ] **Data Export**:
+  - Run `pg_dump` to export the database.
+  - Compress the `minio_data` directory.
+- [ ] **Environment Sync**: Copy `.env` and `.env.local` to the new server.
+- [ ] **IP Update**: If the new server has a different IP, update all environment variables as shown in Section 1.
+- [ ] **Verification**: Run the `TESTING_GUIDE.md` after migration.
 
 ---
 
-## Sensitive Key Management
-**NEVER** share the `ENCRYPTION_KEY` or `JWT_SECRET` between environments. If these keys are lost, existing encrypted messages cannot be decrypted, and all user sessions will be invalidated.
+## Configuration Variable Reference
+| Variable | Description | Security Note |
+|----------|-------------|---------------|
+| `JWT_SECRET` | Used for session tokens | Must be 32+ characters |
+| `ENCRYPTION_KEY` | Used for file encryption | **NEVER** change this once files are stored, or they will be lost. |
+| `REDIS_URL` | Redis connection | Use a password in production. |
+| `MINIO_ACCESS_KEY` | Storage login | Change from `minio_admin`. |

@@ -1,37 +1,33 @@
-# PRODUCTION CHECKLIST
+# Production Readiness Checklist
 
-Before deploying the Enterprise LAN Messenger to a production environment, complete the following checks:
+Before handing over the CipherLink system to the end-users, ensure that all the following items have been verified.
 
-## 1. Security Configuration
-- [ ] **Secrets**: All default `JWT_SECRET`, `ENCRYPTION_KEY`, and `MINIO_SECRET_KEY` have been changed to unique, high-entropy values.
-- [ ] **Encryption**: AES-256-GCM is verified to be working for message storage.
-- [ ] **Rate Limiting**: API rate limiting is enabled to prevent brute-force attacks.
-- [ ] **Firewall**: Only required ports (80, 443, 9000) are open to the LAN.
-- [ ] **CORS**: Configured to only allow requests from the official production domain/IP.
+## 1. Security Checks
+- [ ] **Default Passwords**: Initial Admin password changed from `admin`.
+- [ ] **Secrets**: `JWT_SECRET` and `ENCRYPTION_KEY` are unique and securely stored.
+- [ ] **Firewall**: Only ports 3000, 3001, 9000, 9001 are open.
+- [ ] **Role Validation**: Verified that restricted roles cannot access administrative dashboards.
 
-## 2. Infrastructure & Storage
-- [ ] **Static IP**: The server has a permanently assigned LAN IP address.
-- [ ] **Disk Space**: At least 500GB (or as required) of dedicated storage is allocated to the MinIO volume.
-- [ ] **Persistence**: Docker volumes are mapped to physical storage that survives container restarts.
-- [ ] **Redis**: Configured with a memory limit and eviction policy suitable for the user base.
+## 2. Infrastructure Checks
+- [ ] **Persistence**: Docker volumes for PostgreSQL and MinIO are correctly mapped to persistent storage.
+- [ ] **IP Assignment**: The server has a static IP address that will not change on reboot.
+- [ ] **Auto-Restart**: Containers are configured with `restart: always`.
 
-## 3. Database & Backups
-- [ ] **Database Optimization**: PostgreSQL indexes are verified for `messages` and `users` tables.
-- [ ] **Daily Backups**: A cron job or script is scheduled for daily database dumps.
-- [ ] **Backup Offsite**: Backups are synced to a separate physical location or backup server.
-- [ ] **Restore Test**: A sample restore has been performed successfully on a test server.
+## 3. Database & Storage
+- [ ] **Initial Seeding**: The first Admin user has been created via SQL.
+- [ ] **MinIO Buckets**: The `messenger` bucket exists and has been initialized.
+- [ ] **Backup Job**: The daily database backup cron job is active and tested.
 
-## 4. Monitoring & Logging
-- [ ] **Log Rotation**: Docker log rotation is configured to prevent disk exhaustion.
-- [ ] **Health Checks**: Container health checks are active and reporting "healthy".
-- [ ] **Alerts**: (Optional) Notifications are set up for server downtime or high resource usage.
+## 4. User Testing (UAT)
+- [ ] **Chat Works**: Real-time messaging confirmed across different devices on the LAN.
+- [ ] **File Transfers**: Large files (1GB+) can be uploaded and downloaded without error.
+- [ ] **Notifications**: Unread message badges appear correctly.
 
-## 5. User Testing
-- [ ] **Roles Verified**: Admin, Team Lead, and Team Member roles have been tested for correct permissions.
-- [ ] **Large Files**: A 1GB+ file has been successfully uploaded and downloaded over the LAN.
-- [ ] **Concurrent Chat**: Real-time messaging has been verified with at least 5 simultaneous users.
+## 5. Documentation Handover
+- [ ] **Admin Manual**: System Admin has received the `SYSTEM_ADMIN_GUIDE.md`.
+- [ ] **User Guides**: Role-specific manuals have been distributed to respective departments.
+- [ ] **Support**: A point of contact for technical support has been established.
 
-## 6. Final Launch
-- [ ] **Documentation**: The System Admin and User Manuals are available to the relevant staff.
-- [ ] **Maintenance Window**: Staff have been notified of the initial deployment and any expected downtime.
-- [ ] **Version Control**: The production deployment is tagged with a version number in Git.
+---
+**Approved By**: ____________________  
+**Date**: ____________________

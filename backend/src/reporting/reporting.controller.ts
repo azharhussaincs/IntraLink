@@ -11,7 +11,7 @@ export class ReportingController {
   constructor(private readonly reportingService: ReportingService) {}
 
   @Get('dashboard')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_USER)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_USER, UserRole.TEAM_LEAD)
   async getDashboard() {
     return this.reportingService.getDashboardData();
   }
