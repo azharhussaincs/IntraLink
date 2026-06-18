@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: messenger_db
+    restart: always
+    environment:
+      POSTGRES_USER: messenger_user
+      POSTGRES_PASSWORD: messenger_password
+      POSTGRES_DB: messenger_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: messenger_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio
+    container_name: messenger_minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  backend:
+    build: ./backend
+    container_name: messenger_backend
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build: ./frontend
+    container_name: messenger_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  minio_data:
