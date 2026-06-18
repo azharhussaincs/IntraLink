@@ -83,8 +83,8 @@ sequenceDiagram
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd enterprise-lan-messenger
+   git clone https://github.com/azharhussaincs/IntraLink.git
+   cd IntraLink
    ```
 
 2. **Backend Setup**:
